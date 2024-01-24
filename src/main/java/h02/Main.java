@@ -1,9 +1,11 @@
 package h02;
 
+import fopbot.Direction;
 import fopbot.Robot;
 import fopbot.World;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static org.tudalgo.algoutils.student.Student.crash;
@@ -14,7 +16,7 @@ import static org.tudalgo.algoutils.student.Student.crash;
 public class Main {
     // Delay between each action in FopBot-World (world), for example:
     // Waits 1000ms between each .move() call
-    public static final int DELAY = 1000;
+    public static final int DELAY = 50;
 
     // Generates random int between 4 (inclusive) and 10 (exclusive)
     public static int getRandomWorldSize() {
@@ -75,7 +77,16 @@ public class Main {
      * @return                  Number of robots in the world.
      */
     public int countRobotsInPattern(boolean[][] pattern, int numberOfColumns, int numberOfRows) {
-        return crash(); // TODO: H1.1 - remove if implemented
+        int numberOfRobots = 0;
+        for (int x = 0; x < pattern.length; x++) {
+            for (int y = 0; y < pattern[x].length; y++) {
+                if (x < numberOfColumns && y < numberOfRows && pattern[x][y]) {
+                    numberOfRobots++;
+                }
+            }
+        }
+
+        return numberOfRobots;
     }
 
     /**
@@ -87,7 +98,16 @@ public class Main {
      * @return                  Correctly initialized allRobots array.
      */
     public Robot[] initializeRobotsPattern(boolean[][] pattern, int numberOfColumns, int numberOfRows) {
-        return crash(); // TODO: H1.2 - remove if implemented
+        Robot[] allRobots = new Robot[countRobotsInPattern(pattern, numberOfColumns, numberOfRows)];
+        int numberOfRobots = 0;
+        for (int x = 0; x < numberOfColumns; x++) {
+            for (int y = 0; y < numberOfRows; y++) {
+                if (x < pattern.length && y < pattern[x].length && pattern[x][y]) {
+                    allRobots[numberOfRobots++] = new Robot(x, y, Direction.RIGHT, numberOfColumns - x);
+                }
+            }
+        }
+        return allRobots;
     }
 
     /**
@@ -97,7 +117,13 @@ public class Main {
      * @return            True, if array contains robot.
      */
     public int numberOfNullRobots(Robot[] allRobots) {
-        return crash(); // TODO: H3.1 - remove if implemented
+        int numberOfNullRobots = 0;
+        for (Robot allRobot : allRobots) {
+            if (allRobot == null) {
+                numberOfNullRobots++;
+            }
+        }
+        return numberOfNullRobots;
     }
 
     /**
@@ -107,7 +133,17 @@ public class Main {
      * @return        The array.
      */
     public int[] generateThreeDistinctRandomIndices(int bound) {
-        return crash(); // TODO: H3.2 - remove if implemented
+        int i0 = ThreadLocalRandom.current().nextInt(bound);
+        int i1 = ThreadLocalRandom.current().nextInt(bound);
+        int i2 = ThreadLocalRandom.current().nextInt(bound);
+
+        while (i0 == i1 || i0 == i2 || i1 == i2) {
+            i0 = ThreadLocalRandom.current().nextInt(bound);
+            i1 = ThreadLocalRandom.current().nextInt(bound);
+            i2 = ThreadLocalRandom.current().nextInt(bound);
+        }
+
+        return new int[] {i0, i1, i2};
     }
 
     /**
@@ -116,7 +152,26 @@ public class Main {
      * @param array   The array to be sorted.
      */
     public void sortArray(int[] array) {
-        crash(); // TODO: H3.3 - remove if implemented
+        if (array[1] < array[0]) {
+            int tmp = array[1];
+            array[1] = array[0];
+            array[0] = tmp;
+        }
+
+        if (array[2] < array[0]) {
+            int tmp = array[2];
+            array[2] = array[0];
+            array[0] = tmp;
+        }
+
+        if (array[2] < array[1]) {
+            int tmp = array[2];
+            array[2] = array[1];
+            array[1] = tmp;
+        }
+
+        // Oder Alternativ Lösung -> Arrays.sort(array);
+
     }
 
     /**
@@ -129,7 +184,14 @@ public class Main {
      * @param allRobots     Array containing the robots.
      */
     public void swapRobots(int[] indices, Robot[] allRobots) {
-        crash(); // TODO: H3.4 - remove if implemented
+        int i = indices[0];
+        int j = indices[1];
+        int k = indices[2];
+
+        Robot tmp = allRobots[k];
+        allRobots[k] = allRobots[j];
+        allRobots[j] = allRobots[i];
+        allRobots[i] = tmp;
     }
 
     /**
@@ -140,7 +202,15 @@ public class Main {
      * @return          The reduced array.
      */
     public Robot[] reduceRobotArray(Robot[] robots, int reduceBy) {
-        return crash(); // TODO: H3.5 - remove if implemented
+        int arraySize = robots.length - reduceBy;
+        Robot[] reducedArray = new Robot[arraySize];
+        int counter = 0;
+        for (Robot robot : robots) {
+            if (robot != null) {
+                reducedArray[counter++] = robot;
+            }
+        }
+        return reducedArray;
     }
 
     /**
@@ -152,6 +222,44 @@ public class Main {
      * @param allRobots   Array containing all the robots.
      */
     public void letRobotsMarch(Robot[] allRobots) {
-        crash(); // TODO: H4 - remove if implemented
+        while (numberOfNullRobots(allRobots) != allRobots.length) {
+            for (int i = 0; i < allRobots.length; i++) {
+                if (allRobots[i] != null) {
+                    allRobots[i].putCoin();
+                    if (ifCanMove(allRobots[i])) {
+                        allRobots[i].move();
+                    } else {
+                        allRobots[i] = null;
+                    }
+                }
+            }
+            if (allRobots.length >= 3) {
+                int[] indices = generateThreeDistinctRandomIndices(allRobots.length);
+                sortArray(indices);
+                swapRobots(indices, allRobots);
+            }
+            int numberOfNullRobots = numberOfNullRobots(allRobots);
+            if (numberOfNullRobots >= 3) {
+                allRobots = reduceRobotArray(allRobots, numberOfNullRobots);
+            }
+        }
+    }
+
+    private boolean ifCanMove(Robot robot) {
+        switch (robot.getDirection()) {
+            case UP -> {
+                return robot.getY() != World.getWidth() - 1;
+            }
+            case DOWN -> {
+                return robot.getY() != 0;
+            }
+            case LEFT -> {
+                return robot.getX() != 0;
+            }
+            case RIGHT -> {
+                return robot.getX() != World.getWidth() - 1;
+            }
+            default -> throw new IllegalArgumentException("Ups...Something went Wrong!");
+        }
     }
 }
